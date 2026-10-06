@@ -1,0 +1,3 @@
+import { PageShell, SectionHeader } from '@/components/portfolio'
+export const metadata={title:'About — Odeh Samuel',description:'About Odeh Samuel, a full-stack developer.'}
+export default function About(){return <PageShell active="/about"><main id="content" className="container page prose-page"><SectionHeader number="01" title="About"/><p className="page-intro">I&apos;m a full-stack developer working with the MERN stack, Next.js and PostgreSQL.</p><p>I&apos;ve built habit-tracking, reservation and scheduling applications as personal and learning projects. I choose between document and relational databases based on how the data is shaped: MongoDB for the document-style projects here, PostgreSQL for the scheduling project.</p></main></PageShell>}
