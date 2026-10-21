@@ -1,0 +1,14 @@
+'use client'
+import Link from 'next/link'
+import { Download } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { siteConfig } from '@/content/site-config'
+
+export function OnThisPage({ items }) { const [active,setActive]=useState(items[0]?.id); useEffect(()=>{const obs=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&setActive(e.target.id)),{rootMargin:'-20% 0px -65%'});items.forEach(i=>{const el=document.getElementById(i.id);if(el)obs.observe(el)});return()=>obs.disconnect()},[items]); if(!items.length)return null; return <nav aria-label="On this page" className="on-page"><span className="mono text-muted">On this page</span><details className="on-page-mobile"><summary>Sections</summary><div>{items.map(i=><a href={'#'+i.id} key={i.id}>{i.label}</a>)}</div></details><div className="on-page-desktop">{items.map(i=><a className={active===i.id?'active':''} href={'#'+i.id} key={i.id}>{i.label}</a>)}</div></nav> }
+function Nav({mobile=false}) { const pathname=usePathname(); return <nav aria-label="Primary" className={mobile?'top-nav':'rail-nav'}>{siteConfig.nav.map(item=><Link href={item.href} key={item.href} aria-current={pathname===item.href?'page':undefined}>{item.label}{item.label==='Résumé'&&<Download aria-hidden="true" />}</Link>)}</nav> }
+export function SiteRail({ pageSections=[] }) {return <aside className="site-rail"><Link className="wordmark" href="/">{siteConfig.name}</Link><div className="mono role">{siteConfig.role}</div><Nav />{pageSections.length>0&&<OnThisPage items={pageSections}/>}<div className="rail-bottom"><div className="availability"><span className="status-dot" />{siteConfig.availability}</div><div className="rail-links"><a href={siteConfig.github}>GitHub</a><a href={siteConfig.linkedin}>LinkedIn</a><a href={'mailto:'+siteConfig.email}>Email</a></div></div></aside>}
+export function TopBar(){return <header className="top-bar"><Link className="wordmark" href="/">{siteConfig.name}</Link><div className="mono role">{siteConfig.role}</div><Nav mobile /></header>}
+export function AppShell({children,pageSections=[]}){return <><a className="skip-link" href="#main-content">Skip to content</a><div className="shell"><SiteRail pageSections={pageSections}/><TopBar/><main id="main-content" className="content-pane">{children}</main></div></>}
+export function PageFooter(){return <footer className="page-footer"><span className="mono">{siteConfig.labels.builtWith}</span><span className="mono">{new Date().getFullYear()}</span></footer>}
+export function ExternalLinks(){return <div className="external-links">{siteConfig.github&&<a href={siteConfig.github}>GitHub</a>}{siteConfig.linkedin&&<a href={siteConfig.linkedin}>LinkedIn</a>}<a href={'mailto:'+siteConfig.email}>Email</a><a href={siteConfig.resumePath}>Résumé (PDF)</a></div>}
