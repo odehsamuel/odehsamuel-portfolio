@@ -1,7 +1,13 @@
 export const siteConfig = {
   name: 'Odeh Samuel', role: 'Full-stack developer', email: 'hello@example.com',
   github: 'https://github.com/SAMPLE', linkedin: 'https://www.linkedin.com/in/SAMPLE', resumePath: '/resume.pdf',
-  placeholderFields: ['email', 'github', 'linkedin', 'resumePath'],
+  // Recommended image is 4:5 portrait, about 1200x1500px, under 300KB. Save in public/images/ (e.g. /images/portrait.jpg)
+  heroImage: {
+    src: null,
+    alt: 'SAMPLE: portrait of Odeh Samuel',
+    caption: null,
+  },
+  placeholderFields: ['email', 'github', 'linkedin', 'resumePath', 'heroImage'],
   availability: 'Open to freelance projects and junior full-stack roles.', filterThreshold: 8,
   nav: [{ label: 'Projects', href: '/projects' }, { label: 'About', href: '/about' }, { label: 'Contact', href: '/contact' }, { label: 'Résumé', href: '/resume' }],
   howIWork: [],

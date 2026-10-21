@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Download, Menu, X, ArrowUpRight, ArrowUp } from 'lucide-react'
+import { Download, Menu, X } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { siteConfig } from '@/content/site-config'
 
 export function OnThisPage({ items = [] }) {
@@ -29,140 +30,261 @@ export function OnThisPage({ items = [] }) {
   if (!items.length) return null
 
   return (
-    <nav aria-label="On this page" className="subnav-sections">
-      <div className="subnav-inner">
-        <span className="mono subnav-label">Jump to</span>
-        <div className="subnav-pills">
-          {items.map((i) => (
-            <a
-              key={i.id}
-              href={'#' + i.id}
-              className={`subnav-pill ${active === i.id ? 'active' : ''}`}
-            >
-              {i.label}
-            </a>
-          ))}
-        </div>
+    <nav aria-label="On this page" className="on-page-desktop">
+      <span className="mono text-muted on-page-heading">On this page</span>
+      <div className="on-page-links">
+        {items.map((i) => (
+          <a
+            key={i.id}
+            href={'#' + i.id}
+            className={`on-page-link mono ${active === i.id ? 'active' : ''}`}
+          >
+            {i.label}
+          </a>
+        ))}
       </div>
     </nav>
-  )
-}
-
-function NavLinks({ onNavigate, isMobile = false }) {
-  const pathname = usePathname()
-
-  return (
-    <>
-      {siteConfig.nav.map((item) => {
-        const isActive = pathname === item.href
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={isActive ? 'page' : undefined}
-            className={`nav-link ${isActive ? 'active' : ''} ${isMobile ? 'mobile-link' : ''}`}
-          >
-            <span>{item.label}</span>
-            {item.label === 'Résumé' && <Download className="nav-icon" aria-hidden="true" />}
-          </Link>
-        )
-      })}
-    </>
   )
 }
 
 export function TopBar() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const triggerRef = useRef(null)
+  const panelRef = useRef(null)
+  const reduced = useReducedMotion()
 
+  // Close on route change
   useEffect(() => {
     setIsOpen(false)
   }, [pathname])
 
+  // Close on resize to 640px or wider
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 640) {
+        setIsOpen(false)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [isOpen])
+
+  // Focus trap & Escape key handler
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setIsOpen(false)
+        triggerRef.current?.focus()
+        return
+      }
+
+      if (e.key === 'Tab') {
+        if (!panelRef.current) return
+        const focusable = panelRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+        if (!focusable.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault()
+            first.focus()
+          }
+        }
+      }
+    }
+
+    // Move focus into panel upon opening
+    const timer = setTimeout(() => {
+      if (panelRef.current) {
+        const focusable = panelRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+        if (focusable.length) {
+          focusable[0].focus()
+        }
+      }
+    }, 30)
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('keydown', handleKeyDown)
+      triggerRef.current?.focus()
+    }
+  }, [isOpen])
+
   return (
-    <header className="top-bar">
-      <div className="top-bar-inner">
-        <div className="brand-group">
+    <>
+      <header className="top-bar">
+        <div className="top-bar-inner">
+          {/* Left: Wordmark linking to "/" */}
           <Link className="wordmark" href="/">
             {siteConfig.name}
           </Link>
-          <span className="brand-role mono">{siteConfig.role}</span>
-          <span className="brand-status mono" title={siteConfig.availability}>
-            <span className="status-dot" />
-            <span className="status-text">Available</span>
-          </span>
-        </div>
 
-        {/* Desktop Nav */}
-        <nav aria-label="Primary" className="nav-desktop">
-          <div className="nav-group">
-            <NavLinks />
-          </div>
-          <span className="nav-divider" aria-hidden="true" />
-          <div className="nav-socials">
-            {siteConfig.github && (
-              <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">
-                GitHub <ArrowUpRight className="nav-icon-sm" aria-hidden="true" />
-              </a>
-            )}
-            {siteConfig.linkedin && (
-              <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">
-                LinkedIn <ArrowUpRight className="nav-icon-sm" aria-hidden="true" />
-              </a>
-            )}
-          </div>
-        </nav>
-
-        {/* Mobile Hamburger Toggle */}
-        <button
-          type="button"
-          className="mobile-toggle"
-          aria-label={isOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={isOpen}
-          onClick={() => setIsOpen((prev) => !prev)}
-        >
-          {isOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-
-      {/* Mobile Drawer */}
-      {isOpen && (
-        <div className="mobile-drawer">
-          <nav aria-label="Mobile primary" className="mobile-nav">
-            <NavLinks onNavigate={() => setIsOpen(false)} isMobile />
+          {/* Right: Desktop & Tablet Inline Links (>= 640px) */}
+          <nav aria-label="Primary" className="header-nav">
+            {siteConfig.nav.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`header-nav-link ${isActive ? 'active' : ''}`}
+                >
+                  <span>{item.label}</span>
+                  {item.label === 'Résumé' && (
+                    <Download className="nav-icon" aria-hidden="true" />
+                  )}
+                </Link>
+              )
+            })}
           </nav>
 
-          <div className="mobile-availability">
-            <span className="status-dot" />
-            <span>{siteConfig.availability}</span>
-          </div>
-
-          <div className="mobile-links mono">
-            {siteConfig.github && (
-              <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">
-                GitHub
-              </a>
+          {/* Right: Mobile Hamburger Button (< 640px) */}
+          <button
+            ref={triggerRef}
+            type="button"
+            className="hamburger-btn"
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
+            aria-label={isOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setIsOpen((prev) => !prev)}
+          >
+            {isOpen ? (
+              <X size={20} aria-hidden="true" />
+            ) : (
+              <Menu size={20} aria-hidden="true" />
             )}
-            {siteConfig.linkedin && (
-              <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">
-                LinkedIn
-              </a>
-            )}
-            <a href={`mailto:${siteConfig.email}`}>Email</a>
-          </div>
+          </button>
         </div>
-      )}
-    </header>
+      </header>
+
+      {/* Mobile Menu Panel */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Simple black scrim at ~60% opacity (no blur) */}
+            <motion.div
+              className="mobile-scrim"
+              onClick={() => setIsOpen(false)}
+              initial={reduced ? { opacity: 0.6 } : { opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0 }}
+              transition={reduced ? { duration: 0 } : { duration: 0.2 }}
+              aria-hidden="true"
+            />
+
+            {/* Slide-in panel from the left, width min(320px, 85vw) */}
+            <motion.div
+              id="mobile-menu"
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
+              className="mobile-panel"
+              initial={reduced ? false : { x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={reduced ? { opacity: 0 } : { x: '-100%' }}
+              transition={
+                reduced
+                  ? { duration: 0 }
+                  : { duration: 0.2, ease: 'easeOut' }
+              }
+            >
+              <div className="mobile-panel-header">
+                <Link
+                  className="wordmark"
+                  href="/"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {siteConfig.name}
+                </Link>
+                <button
+                  type="button"
+                  className="mobile-close-btn"
+                  aria-label="Close menu"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <X size={20} aria-hidden="true" />
+                </button>
+              </div>
+
+              {/* Vertical nav links with large tap targets */}
+              <nav aria-label="Mobile Navigation" className="mobile-nav-links">
+                {siteConfig.nav.map((item) => {
+                  const isActive = pathname === item.href
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`mobile-nav-link ${isActive ? 'active' : ''}`}
+                    >
+                      <span>{item.label}</span>
+                      {item.label === 'Résumé' && (
+                        <Download className="nav-icon" aria-hidden="true" />
+                      )}
+                    </Link>
+                  )
+                })}
+              </nav>
+
+              {/* Rail bottom content in mobile drawer: availability status and links */}
+              <div className="mobile-panel-bottom">
+                <div className="availability">
+                  <span className="status-dot" />
+                  <span>{siteConfig.availability}</span>
+                </div>
+                <div className="rail-links">
+                  {siteConfig.github && <a href={siteConfig.github}>GitHub</a>}
+                  {siteConfig.linkedin && (
+                    <a href={siteConfig.linkedin}>LinkedIn</a>
+                  )}
+                  {siteConfig.email && (
+                    <a href={'mailto:' + siteConfig.email}>Email</a>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 
 export function SiteRail() {
-  // Maintained for backward compatibility; layout now uses TopBar
+  // Maintained for backward compatibility; replaced by top-navigation layout
   return null
 }
 
-export function AppShell({ children, pageSections = [] }) {
+export function AppShell({ children }) {
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -170,7 +292,6 @@ export function AppShell({ children, pageSections = [] }) {
       </a>
       <div className="shell">
         <TopBar />
-        {pageSections.length > 0 && <OnThisPage items={pageSections} />}
         <main id="main-content" className="content-pane">
           {children}
         </main>
@@ -180,49 +301,38 @@ export function AppShell({ children, pageSections = [] }) {
 }
 
 export function PageFooter() {
-  const scrollToTop = () => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-  }
-
   return (
     <footer className="page-footer">
       <div className="page-footer-inner">
-        <div className="footer-top">
-          <div className="footer-brand-block">
-            <Link className="footer-wordmark" href="/">
-              {siteConfig.name}
-            </Link>
-            <div className="footer-role mono">{siteConfig.role}</div>
-            <div className="footer-availability">
-              <span className="status-dot" />
-              <span>{siteConfig.availability}</span>
-            </div>
-          </div>
-
-          <div className="footer-links mono">
-            {siteConfig.github && (
-              <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">
-                GitHub
-              </a>
-            )}
-            {siteConfig.linkedin && (
-              <a href={siteConfig.linkedin} target="_blank" rel="noopener noreferrer">
-                LinkedIn
-              </a>
-            )}
+        {/* GitHub, LinkedIn, and Email links from siteConfig */}
+        <div className="footer-links mono">
+          {siteConfig.github && (
+            <a href={siteConfig.github} target="_blank" rel="noopener noreferrer">
+              GitHub
+            </a>
+          )}
+          {siteConfig.linkedin && (
+            <a
+              href={siteConfig.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              LinkedIn
+            </a>
+          )}
+          {siteConfig.email && (
             <a href={`mailto:${siteConfig.email}`}>Email</a>
-            <a href={siteConfig.resumePath}>Résumé (PDF)</a>
-          </div>
+          )}
+          {siteConfig.resumePath && (
+            <a href={siteConfig.resumePath} download>
+              Résumé (PDF)
+            </a>
+          )}
         </div>
 
-        <div className="footer-bottom mono">
+        <div className="footer-meta mono">
           <span>{siteConfig.labels.builtWith}</span>
-          <span>© {new Date().getFullYear()} {siteConfig.name}</span>
-          <button type="button" onClick={scrollToTop} className="back-to-top">
-            Back to top <ArrowUp size={14} aria-hidden="true" />
-          </button>
+          <span>{new Date().getFullYear()}</span>
         </div>
       </div>
     </footer>
@@ -247,4 +357,3 @@ export function ExternalLinks() {
     </div>
   )
 }
-
