@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { siteConfig } from '@/content/site-config'
 import { OwnerManager } from './owner-manager'
+import { ThemeToggle } from './theme-toggle'
 
 export function OnThisPage({ items = [] }) {
   const [active, setActive] = useState(items[0]?.id || '')
@@ -146,42 +147,45 @@ export function TopBar() {
             {siteConfig.name}
           </Link>
 
-          {/* Right: Desktop & Tablet Inline Links (>= 640px) */}
-          <nav aria-label="Primary" className="header-nav">
-            {siteConfig.nav.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`header-nav-link ${isActive ? 'active' : ''}`}
-                >
-                  <span>{item.label}</span>
-                  {item.label === 'Résumé' && (
-                    <Download className="nav-icon" aria-hidden="true" />
-                  )}
-                </Link>
-              )
-            })}
-          </nav>
+          {/* Right Header Area: Desktop Nav, Theme Toggle, and Mobile Hamburger */}
+          <div className="top-bar-actions">
+            <nav aria-label="Primary" className="header-nav">
+              {siteConfig.nav.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`header-nav-link ${isActive ? 'active' : ''}`}
+                  >
+                    <span>{item.label}</span>
+                    {item.label === 'Résumé' && (
+                      <Download className="nav-icon" aria-hidden="true" />
+                    )}
+                  </Link>
+                )
+              })}
+            </nav>
 
-          {/* Right: Mobile Hamburger Button (< 640px) */}
-          <button
-            ref={triggerRef}
-            type="button"
-            className="hamburger-btn"
-            aria-expanded={isOpen}
-            aria-controls="mobile-menu"
-            aria-label={isOpen ? 'Close menu' : 'Open menu'}
-            onClick={() => setIsOpen((prev) => !prev)}
-          >
-            {isOpen ? (
-              <X size={20} aria-hidden="true" />
-            ) : (
-              <Menu size={20} aria-hidden="true" />
-            )}
-          </button>
+            <ThemeToggle className="header-theme-toggle" />
+
+            <button
+              ref={triggerRef}
+              type="button"
+              className="hamburger-btn"
+              aria-expanded={isOpen}
+              aria-controls="mobile-menu"
+              aria-label={isOpen ? 'Close menu' : 'Open menu'}
+              onClick={() => setIsOpen((prev) => !prev)}
+            >
+              {isOpen ? (
+                <X size={20} aria-hidden="true" />
+              ) : (
+                <Menu size={20} aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -256,8 +260,11 @@ export function TopBar() {
                 })}
               </nav>
 
-              {/* Rail bottom content in mobile drawer: availability status and links */}
+              {/* Rail bottom content in mobile drawer: theme toggle, availability status and links */}
               <div className="mobile-panel-bottom">
+                <div className="mobile-drawer-theme">
+                  <ThemeToggle showLabel className="drawer-theme-toggle" />
+                </div>
                 <div className="availability">
                   <span className="status-dot" />
                   <span>{siteConfig.availability}</span>
