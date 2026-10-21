@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { siteConfig } from '@/content/site-config'
+import { OwnerManager } from './owner-manager'
 
 export function OnThisPage({ items = [] }) {
   const [active, setActive] = useState(items[0]?.id || '')
@@ -59,10 +60,10 @@ export function TopBar() {
     setIsOpen(false)
   }, [pathname])
 
-  // Close on resize to 640px or wider
+  // Close on resize to 768px or wider
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 640) {
+      if (window.innerWidth >= 768) {
         setIsOpen(false)
       }
     }
@@ -295,12 +296,19 @@ export function AppShell({ children }) {
         <main id="main-content" className="content-pane">
           {children}
         </main>
+        <OwnerManager />
       </div>
     </>
   )
 }
 
 export function PageFooter() {
+  const handleFooterMetaClick = (e) => {
+    if (e.detail >= 2) {
+      window.dispatchEvent(new CustomEvent('open-owner-auth'))
+    }
+  }
+
   return (
     <footer className="page-footer">
       <div className="page-footer-inner">
@@ -330,7 +338,12 @@ export function PageFooter() {
           )}
         </div>
 
-        <div className="footer-meta mono">
+        <div
+          className="footer-meta mono"
+          onClick={handleFooterMetaClick}
+          title="Odeh Samuel Portfolio"
+          style={{ cursor: 'default' }}
+        >
           <span>{siteConfig.labels.builtWith}</span>
           <span>{new Date().getFullYear()}</span>
         </div>
