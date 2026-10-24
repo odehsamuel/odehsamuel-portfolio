@@ -1,21 +1,376 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, LayoutGrid, List } from 'lucide-react'
 import { siteConfig } from '@/content/site-config'
 import { PlaceholderImage } from '@/components/placeholder-image'
 import { OnThisPage } from '@/components/site-shell'
 
 const isSample = (project, field) => project.placeholderFields?.includes(field)
-function SampleValue({ project, field, children }) { return <span className={isSample(project, field) ? 'sample-value' : ''}>{children}{isSample(project, field) && <small className="sample-tag mono">SAMPLE</small>}</span> }
-function DatabaseText({ databases=[] }) { return databases.map(db => `${db.name} · ${db.type}`).join(' · ') }
-function ProjectLinks({ project }) { return <div className="external-links">{project.links?.github && <a href={project.links.github}>GitHub <ArrowUpRight aria-hidden="true" /></a>}{project.links?.live && <a href={project.links.live}>Live demo <ArrowUpRight aria-hidden="true" /></a>}</div> }
 
-export function ProjectIndex({ projects }) { return <section className="projects-index"><div className="section-header"><span className="mono section-number">01</span><h1>Projects</h1></div><div className="project-table" role="list">{projects.map((project, index) => <Link className="project-row" role="listitem" href={`/projects/${project.slug}`} key={project.slug}><span className="mono row-number">{String(index + 1).padStart(2, '0')}</span><span className="row-title"><strong>{project.title}</strong><span>{project.summary}</span><small className="mono">{project.year} · {project.category}</small></span><span className="mono row-stack">{[...(project.stack.frontend || []), ...(project.stack.backend || [])].slice(0, 3).join(' · ')}</span><span className="mono row-data">{DatabaseText({ databases: project.stack.databases })}</span><span className="mono row-status"><i className="status-dot" />{project.status}</span><ArrowRight className="row-arrow" aria-hidden="true" /></Link>)}</div></section> }
+function SampleValue({ project, field, children }) {
+  return (
+    <span className={isSample(project, field) ? 'sample-value' : ''}>
+      {children}
+      {isSample(project, field) && <small className="sample-tag mono">SAMPLE</small>}
+    </span>
+  )
+}
 
-export function FilterBar({ options }) { if (!options.categories.length && !options.technologies.length) return null; return <div className="filter-bar mono"><span>Filter</span>{options.categories.map(value => <Link key={value} href={`/projects?category=${encodeURIComponent(value)}`}>{value}</Link>)}{options.technologies.map(value => <Link key={value} href={`/projects?tech=${encodeURIComponent(value.toLowerCase())}`}>{value}</Link>)}</div> }
+function DatabaseText({ databases = [] }) {
+  return databases.map((db) => `${db.name} · ${db.type}`).join(' · ')
+}
+
+function ProjectLinks({ project }) {
+  return (
+    <div className="external-links">
+      {project.links?.github && (
+        <a href={project.links.github} target="_blank" rel="noopener noreferrer">
+          GitHub <ArrowUpRight aria-hidden="true" size={13} />
+        </a>
+      )}
+      {project.links?.live && (
+        <a href={project.links.live} target="_blank" rel="noopener noreferrer">
+          Live demo <ArrowUpRight aria-hidden="true" size={13} />
+        </a>
+      )}
+    </div>
+  )
+}
+
+export function ProjectIndex({ projects }) {
+  const [viewMode, setViewMode] = useState('list') // 'list' | 'grid'
+
+  return (
+    <section className="projects-index">
+      <div className="section-header">
+        <div className="section-title-wrap">
+          <span className="mono section-number">01</span>
+          <h1>Projects</h1>
+        </div>
+
+        {/* View Switcher: Table List vs Visual Showcase */}
+        <div className="projects-view-toggle mono">
+          <button
+            type="button"
+            className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
+            title="List view with screenshot thumbnails"
+          >
+            <List size={14} />
+            <span>List</span>
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            title="Visual Showcase with large screenshots"
+          >
+            <LayoutGrid size={14} />
+            <span>Showcase</span>
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'list' ? (
+        /* List / Table View with Screenshot Previews */
+        <div className="project-table" role="list">
+          {projects.map((project, index) => (
+            <Link
+              className="project-row"
+              role="listitem"
+              href={`/projects/${project.slug}`}
+              key={project.slug}
+            >
+              <span className="mono row-number">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+
+              {/* Website Screenshot Thumbnail Preview */}
+              <div className="row-thumb-wrap">
+                {project.cover?.src ? (
+                  <img
+                    src={project.cover.src}
+                    alt={project.cover.alt || `${project.title} screenshot`}
+                    className="row-thumb-img"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="row-thumb-placeholder mono">
+                    <span>IMG</span>
+                  </div>
+                )}
+              </div>
+
+              <span className="row-title">
+                <strong>{project.title}</strong>
+                <span>{project.summary}</span>
+                <small className="mono">
+                  {project.year} · {project.category}
+                </small>
+              </span>
+
+              <span className="mono row-stack">
+                {[...(project.stack?.frontend || []), ...(project.stack?.backend || [])]
+                  .slice(0, 3)
+                  .join(' · ')}
+              </span>
+
+              <span className="mono row-data">
+                {DatabaseText({ databases: project.stack?.databases })}
+              </span>
+
+              <span className="mono row-status">
+                <i className="status-dot" />
+                {project.status}
+              </span>
+
+              <ArrowRight className="row-arrow" aria-hidden="true" size={16} />
+            </Link>
+          ))}
+        </div>
+      ) : (
+        /* Visual Showcase Grid with Full Screenshot Cards */
+        <div className="projects-showcase-grid">
+          {projects.map((project, index) => (
+            <Link
+              key={project.slug}
+              href={`/projects/${project.slug}`}
+              className="showcase-card"
+            >
+              <div className="showcase-screenshot-wrap">
+                <PlaceholderImage
+                  src={project.cover?.src}
+                  alt={project.cover?.alt || `${project.title} screenshot`}
+                />
+                <span className="showcase-index-badge mono">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+              </div>
+
+              <div className="showcase-card-body">
+                <div className="showcase-top-meta mono text-xs">
+                  <span>{project.year}</span>
+                  <span className="status-badge">
+                    <i className="status-dot" /> {project.status}
+                  </span>
+                  <span className="category-tag">{project.category}</span>
+                </div>
+
+                <h3>{project.title}</h3>
+                <p className="text-muted">{project.summary}</p>
+
+                <div className="showcase-stack mono text-xs">
+                  {[...(project.stack?.frontend || []), ...(project.stack?.backend || [])]
+                    .slice(0, 4)
+                    .join(' · ')}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+export function FilterBar({ options }) {
+  if (!options?.categories?.length && !options?.technologies?.length) return null
+  return (
+    <div className="filter-bar mono">
+      <span>Filter</span>
+      {options.categories.map((value) => (
+        <Link key={value} href={`/projects?category=${encodeURIComponent(value)}`}>
+          {value}
+        </Link>
+      ))}
+      {options.technologies.map((value) => (
+        <Link key={value} href={`/projects?tech=${encodeURIComponent(value.toLowerCase())}`}>
+          {value}
+        </Link>
+      ))}
+    </div>
+  )
+}
 
 const detailSections = [
-  ['overview', 'Overview'], ['problem', 'Problem'], ['solution', 'Solution'], ['role', 'My role'], ['implementation', 'Implementation'], ['features', 'Key features'], ['architecture', 'Architecture'], ['dataDesign', 'Data design'], ['challenges', 'Technical challenges'], ['outcome', 'Technical outcome'], ['lessons', 'Lessons learned'], ['improvements', 'What I would improve']
+  ['overview', 'Overview'],
+  ['problem', 'Problem'],
+  ['solution', 'Solution'],
+  ['role', 'My role'],
+  ['implementation', 'Implementation'],
+  ['features', 'Key features'],
+  ['architecture', 'Architecture'],
+  ['dataDesign', 'Data design'],
+  ['challenges', 'Technical challenges'],
+  ['outcome', 'Technical outcome'],
+  ['lessons', 'Lessons learned'],
+  ['improvements', 'What I would improve'],
 ]
-function Section({ number, title, children, id }) { return <section className="detail-section" id={id}><div className="section-header"><span className="mono section-number">{number}</span><h2>{title}</h2></div>{children}</section> }
-function DetailBody({ project }) { let number = 3; return <>{detailSections.map(([field, title]) => { const value = project[field]; if (!value || (Array.isArray(value) && !value.length)) return null; const current = number++; let content = <p>{value}</p>; if (field === 'implementation') content = value.map(item => <p key={item}>{item}</p>); if (field === 'features') content = <ul className="feature-list">{value.map(item => <li key={item}>{item}</li>)}</ul>; if (field === 'challenges') content = value.map(item => <div className="challenge" key={item.challenge}><h3>{item.challenge}</h3><p>{item.solution}</p></div>); return <Section key={field} id={field} number={String(current).padStart(2, '0')} title={title}>{content}</Section> })}</> }
-export function ProjectDetail({ project, adjacent, pageSections = [] }) { const showOnThisPage = pageSections.length >= 5; return <div className={`project-page-layout ${showOnThisPage ? 'has-sidebar' : ''}`}><article className="project-detail">{showOnThisPage && <details className="on-page-disclosure"><summary className="mono text-muted">On this page</summary><div className="disclosure-links">{pageSections.map(i => <a key={i.id} href={'#' + i.id}>{i.label}</a>)}</div></details>}<header className="detail-header"><span className="mono eyebrow">{project.category}</span><h1>{project.title}</h1><p>{project.summary}</p><dl className="meta-grid"><div><dt>Context</dt><dd><SampleValue project={project} field="context">{project.context}</SampleValue></dd></div><div><dt>Category</dt><dd>{project.category}</dd></div><div><dt>Year</dt><dd><SampleValue project={project} field="year">{project.year}</SampleValue></dd></div><div><dt>Status</dt><dd><SampleValue project={project} field="status">{project.status}</SampleValue></dd></div><div><dt>Links</dt><dd><ProjectLinks project={project}/></dd></div></dl></header><PlaceholderImage src={project.cover?.src} alt={project.cover?.alt || `${project.title} screenshot`}/><Section number="02" title="Technology stack" id="technology-stack"><div className="toolkit-list"><div className="toolkit-row"><span className="mono">Frontend</span><span>{(project.stack.frontend || []).join(' · ')}</span></div><div className="toolkit-row"><span className="mono">Backend</span><span>{(project.stack.backend || []).join(' · ')}</span></div><div className="toolkit-row"><span className="mono">Data layer</span><span>{DatabaseText({ databases: project.stack.databases })}</span></div><div className="toolkit-row"><span className="mono">Other</span><span>{(project.stack.other || []).join(' · ')}</span></div></div></Section><DetailBody project={project}/><footer className="detail-footer">{adjacent && <Link className="amber-link" href={`/projects/${adjacent.slug}`}>Next project: {adjacent.title} →</Link>}<a className="amber-link" href={`mailto:${siteConfig.email}`}>Interested in something similar? Email me.</a></footer></article>{showOnThisPage && <aside className="project-detail-sidebar"><OnThisPage items={pageSections} /></aside>}</div> }
+
+function Section({ number, title, children, id }) {
+  return (
+    <section className="detail-section" id={id}>
+      <div className="section-header">
+        <span className="mono section-number">{number}</span>
+        <h2>{title}</h2>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function DetailBody({ project }) {
+  let number = 3
+  return (
+    <>
+      {detailSections.map(([field, title]) => {
+        const value = project[field]
+        if (!value || (Array.isArray(value) && !value.length)) return null
+        const current = number++
+        let content = <p>{value}</p>
+        if (field === 'implementation') {
+          content = value.map((item) => <p key={item}>{item}</p>)
+        }
+        if (field === 'features') {
+          content = (
+            <ul className="feature-list">
+              {value.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          )
+        }
+        if (field === 'challenges') {
+          content = value.map((item) => (
+            <div className="challenge" key={item.challenge}>
+              <h3>{item.challenge}</h3>
+              <p>{item.solution}</p>
+            </div>
+          ))
+        }
+        return (
+          <Section
+            key={field}
+            id={field}
+            number={String(current).padStart(2, '0')}
+            title={title}
+          >
+            {content}
+          </Section>
+        )
+      })}
+    </>
+  )
+}
+
+export function ProjectDetail({ project, adjacent, pageSections = [] }) {
+  const showOnThisPage = pageSections.length >= 5
+  return (
+    <div className={`project-page-layout ${showOnThisPage ? 'has-sidebar' : ''}`}>
+      <article className="project-detail">
+        {showOnThisPage && (
+          <details className="on-page-disclosure">
+            <summary className="mono text-muted">On this page</summary>
+            <div className="disclosure-links">
+              {pageSections.map((i) => (
+                <a key={i.id} href={'#' + i.id}>
+                  {i.label}
+                </a>
+              ))}
+            </div>
+          </details>
+        )}
+
+        <header className="detail-header">
+          <span className="mono eyebrow">{project.category}</span>
+          <h1>{project.title}</h1>
+          <p>{project.summary}</p>
+          <dl className="meta-grid">
+            <div>
+              <dt>Context</dt>
+              <dd>
+                <SampleValue project={project} field="context">
+                  {project.context}
+                </SampleValue>
+              </dd>
+            </div>
+            <div>
+              <dt>Category</dt>
+              <dd>{project.category}</dd>
+            </div>
+            <div>
+              <dt>Year</dt>
+              <dd>
+                <SampleValue project={project} field="year">
+                  {project.year}
+                </SampleValue>
+              </dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>
+                <SampleValue project={project} field="status">
+                  {project.status}
+                </SampleValue>
+              </dd>
+            </div>
+            <div>
+              <dt>Links</dt>
+              <dd>
+                <ProjectLinks project={project} />
+              </dd>
+            </div>
+          </dl>
+        </header>
+
+        {/* Website Screenshot Cover */}
+        <PlaceholderImage
+          src={project.cover?.src}
+          alt={project.cover?.alt || `${project.title} screenshot`}
+        />
+
+        <Section number="02" title="Technology stack" id="technology-stack">
+          <div className="toolkit-list">
+            <div className="toolkit-row">
+              <span className="mono">Frontend</span>
+              <span>{(project.stack?.frontend || []).join(' · ')}</span>
+            </div>
+            <div className="toolkit-row">
+              <span className="mono">Backend</span>
+              <span>{(project.stack?.backend || []).join(' · ')}</span>
+            </div>
+            <div className="toolkit-row">
+              <span className="mono">Data layer</span>
+              <span>{DatabaseText({ databases: project.stack?.databases })}</span>
+            </div>
+            <div className="toolkit-row">
+              <span className="mono">Other</span>
+              <span>{(project.stack?.other || []).join(' · ')}</span>
+            </div>
+          </div>
+        </Section>
+
+        <DetailBody project={project} />
+
+        <footer className="detail-footer">
+          {adjacent && (
+            <Link className="amber-link" href={`/projects/${adjacent.slug}`}>
+              Next project: {adjacent.title} →
+            </Link>
+          )}
+          <a className="amber-link" href={`mailto:${siteConfig.email}`}>
+            Interested in something similar? Email me.
+          </a>
+        </footer>
+      </article>
+
+      {showOnThisPage && (
+        <aside className="project-detail-sidebar">
+          <OnThisPage items={pageSections} />
+        </aside>
+      )}
+    </div>
+  )
+}

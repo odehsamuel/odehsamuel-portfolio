@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -30,6 +31,13 @@ export async function POST(request) {
     if (action === 'delete') {
       projects = projects.filter((p) => p.slug !== slug)
       await fs.writeFile(DATA_FILE, JSON.stringify(projects, null, 2), 'utf-8')
+      try {
+        revalidatePath('/')
+        revalidatePath('/projects')
+        if (slug) revalidatePath(`/projects/${slug}`)
+      } catch (e) {
+        console.error('Revalidate error:', e)
+      }
       return NextResponse.json({ success: true, message: 'Project removed successfully' })
     }
 
@@ -56,6 +64,13 @@ export async function POST(request) {
     }
 
     await fs.writeFile(DATA_FILE, JSON.stringify(projects, null, 2), 'utf-8')
+    try {
+      revalidatePath('/')
+      revalidatePath('/projects')
+      revalidatePath(`/projects/${project.slug}`)
+    } catch (e) {
+      console.error('Revalidate error:', e)
+    }
     return NextResponse.json({ success: true, message: 'Project saved successfully', project })
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 })

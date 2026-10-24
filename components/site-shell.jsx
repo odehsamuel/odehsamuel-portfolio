@@ -335,6 +335,15 @@ export function PageFooter() {
               LinkedIn
             </a>
           )}
+          {siteConfig.whatapp && (
+            <a
+              href={siteConfig.whatapp}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Whatapp
+            </a>
+          )}
           {siteConfig.email && (
             <a href={`mailto:${siteConfig.email}`}>Email</a>
           )}

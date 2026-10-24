@@ -1,3 +1,23 @@
 import { AppShell, PageFooter, ExternalLinks } from '@/components/site-shell'
 import { siteConfig } from '@/content/site-config'
-export default function AboutPage() { return <AppShell><article className="reading-page"><div className="section-header"><span className="mono section-number">01</span><h1>About</h1></div><p>I&apos;m a full-stack developer working with the MERN stack, Next.js and PostgreSQL. I&apos;ve built habit-tracking, reservation and scheduling applications as personal and learning projects. I choose between document and relational databases based on how the data is shaped: MongoDB for the document-style projects here, PostgreSQL for the scheduling project.</p><ExternalLinks/></article><PageFooter/></AppShell> }
+
+export default function AboutPage() {
+    return (
+        <AppShell>
+            <article className="reading-page">
+                <div className="section-header">
+                    <span className="mono section-number">01</span>
+                    <h1>About</h1>
+                </div>
+                <p>
+                    I&apos;m a full-stack developer working with the MERN stack, Next.js and PostgreSQL. I&apos;ve
+                    built habit-tracking, reservation and scheduling applications as personal and learning projects.
+                    I choose between document and relational databases based on how the data is shaped: MongoDB for
+                    the document-style projects here, PostgreSQL for the scheduling project.
+                </p>
+                <ExternalLinks />
+            </article>
+            <PageFooter />
+        </AppShell>
+    )
+}

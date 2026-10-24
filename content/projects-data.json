@@ -9,13 +9,29 @@
     "year": "2024",
     "published": true,
     "featured": true,
-    "featuredOrder": 1,
-    "order": 1,
+    "featuredOrder": 2,
+    "order": 2,
     "stack": {
-      "frontend": ["React", "Tailwind CSS", "React Query", "Zustand"],
-      "backend": ["Node.js", "Express.js"],
-      "databases": [{ "name": "MongoDB", "type": "document" }],
-      "other": ["JWT", "HTTP-only cookies"]
+      "frontend": [
+        "React",
+        "Tailwind CSS",
+        "React Query",
+        "Zustand"
+      ],
+      "backend": [
+        "Node.js",
+        "Express.js"
+      ],
+      "databases": [
+        {
+          "name": "MongoDB",
+          "type": "document"
+        }
+      ],
+      "other": [
+        "JWT",
+        "HTTP-only cookies"
+      ]
     },
     "links": {
       "github": "https://github.com/odehsamuel/habit-tracker"
@@ -38,7 +54,10 @@
       "User-specific data"
     ],
     "outcome": "The project gave me practical experience with authentication, user-specific data, CRUD operations and a MongoDB-backed API, plus managing state on the frontend with React Query and Zustand.",
-    "placeholderFields": ["status", "links"]
+    "placeholderFields": [
+      "status",
+      "links"
+    ]
   },
   {
     "slug": "restaurant-reservation-system",
@@ -50,13 +69,27 @@
     "year": "2024",
     "published": true,
     "featured": true,
-    "featuredOrder": 2,
-    "order": 2,
+    "featuredOrder": 3,
+    "order": 3,
     "stack": {
-      "frontend": ["React", "JavaScript"],
-      "backend": ["Node.js", "Express.js"],
-      "databases": [{ "name": "MongoDB", "type": "document" }],
-      "other": ["Cloudinary", "Multer"]
+      "frontend": [
+        "React",
+        "JavaScript"
+      ],
+      "backend": [
+        "Node.js",
+        "Express.js"
+      ],
+      "databases": [
+        {
+          "name": "MongoDB",
+          "type": "document"
+        }
+      ],
+      "other": [
+        "Cloudinary",
+        "Multer"
+      ]
     },
     "links": {
       "github": "https://github.com/odehsamuel/restaurant-reservation-system"
@@ -75,7 +108,10 @@
     "architecture": "The React frontend talks to an Express API. The API handles authentication, reservation operations and communication with the database.",
     "dataDesign": "The app uses MongoDB with two collections, users and reservations. Reservations are tied to the user who made them, so each user sees their own bookings.",
     "outcome": "The project gave me practical experience building registration and login, user-specific data, reservation CRUD and an Express API connected to MongoDB.",
-    "placeholderFields": ["status", "links"]
+    "placeholderFields": [
+      "status",
+      "links"
+    ]
   },
   {
     "slug": "clinicq-dental-scheduling",
@@ -87,16 +123,25 @@
     "year": "2025",
     "published": true,
     "featured": false,
-    "order": 3,
+    "order": 4,
     "stack": {
-      "frontend": ["JavaScript", "Tailwind CSS", "Framer Motion"],
-      "databases": [{ "name": "PostgreSQL", "type": "relational" }]
+      "frontend": [
+        "JavaScript",
+        "Tailwind CSS",
+        "Framer Motion"
+      ],
+      "databases": [
+        {
+          "name": "PostgreSQL",
+          "type": "relational"
+        }
+      ]
     },
     "links": {
       "github": "https://github.com/odehsamuel/clinicq-dental-scheduling"
     },
     "cover": {
-      "src": "/images/clinicq.jpg",
+      "src": "/images/uploads/clinicq-dental-scheduling-1792661700420.png",
       "alt": "Screenshot of the ClinicQ Dental Scheduling booking flow"
     },
     "overview": "I built ClinicQ to practise a scheduling workflow on a dental clinic website. A visitor can look through the clinic's services, choose an appointment option, enter their details and submit a scheduling request. Appointment data is stored in PostgreSQL, a relational database.",
@@ -106,6 +151,49 @@
       "Enter patient details",
       "Submit a scheduling request"
     ],
-    "placeholderFields": ["status", "links"]
+    "placeholderFields": [
+      "status",
+      "links"
+    ]
+  },
+  {
+    "title": "Lumina Photo Studio",
+    "slug": "lumina-photo-studio",
+    "summary": "Lumina Studio is a wallpaper-sharing platform where users can discover, upload, and download beautiful, high-resolution wallpapers and images across diverse categories. It provides a visually engaging experience for exploring inspiration, saving favorites, and sharing images with a creative community.",
+    "category": "Frontend web app",
+    "year": "2024",
+    "status": "completed",
+    "published": true,
+    "featured": true,
+    "featuredOrder": 1,
+    "context": "personal",
+    "stack": {
+      "frontend": [
+        "React",
+        "Tailwind CSS"
+      ],
+      "backend": [
+        "Node.js",
+        "Express.js"
+      ],
+      "databases": [
+        {
+          "name": "Firebase",
+          "type": "relational"
+        }
+      ],
+      "other": []
+    },
+    "links": {
+      "github": "https://github.com/odehsamuel/photo-studio",
+      "live": "https://photo-studio-seven.vercel.app/"
+    },
+    "cover": {
+      "src": "/images/uploads/screenshot-1792661142208.png",
+      "alt": "Screenshot of lumina studio"
+    },
+    "overview": "## Project Overview\n\nLumina Studio is a web-based wallpaper and image-sharing platform designed to make discovering and sharing high-quality visuals simple and enjoyable. Users can explore wallpapers across categories such as nature, animals, architecture, travel, and cyberpunk, search for images by keywords or tags, upload their own images, and download wallpapers for personal use.\n\nThe platform features a dark-themed interface, an image-focused gallery, category-based browsing, and interactive elements such as favorites and community engagement. Its goal is to create a central space where users can find visual inspiration, contribute their own photography and artwork, and access wallpapers suited to their devices and creative preferences.",
+    "features": [],
+    "order": 1
   }
 ]

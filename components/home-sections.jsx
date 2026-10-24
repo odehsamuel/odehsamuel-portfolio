@@ -146,8 +146,8 @@ export function FeaturedProject({ project, index }) {
       <article className="case-file">
         <div className="case-meta mono">
           <span>{String(index + 1).padStart(2, '0')}</span>
-          <span>
-            <i className="status-dot" />
+          <span className={project.status === 'completed' ? 'status-completed' : 'status-in-progress'}>
+            <i className={`status-dot ${project.status === 'completed' ? 'completed' : ''}`} />
             {project.status}
           </span>
           <Context project={project} />
