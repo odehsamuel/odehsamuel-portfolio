@@ -1,16 +1,100 @@
 [
   {
+    "title": "Lumina Photo Studio",
+    "slug": "lumina-photo-studio",
+    "summary": "Lumina Studio is a wallpaper-sharing platform where users can discover, upload, and download beautiful, high-resolution wallpapers and images across diverse categories. It provides a visually engaging experience for exploring inspiration, saving favorites, and sharing images with a creative community.",
+    "category": "Frontend web app",
+    "year": "2024",
+    "status": "completed",
+    "published": true,
+    "featured": true,
+    "featuredOrder": 1,
+    "context": "personal",
+    "stack": {
+      "frontend": [
+        "React",
+        "Tailwind CSS"
+      ],
+      "backend": [
+        "Node.js",
+        "Express.js"
+      ],
+      "databases": [
+        {
+          "name": "Firebase",
+          "type": "relational"
+        }
+      ],
+      "other": []
+    },
+    "links": {
+      "github": "https://github.com/odehsamuel/photo-studio",
+      "live": "https://photo-studio-seven.vercel.app/"
+    },
+    "cover": {
+      "src": "/images/uploads/screenshot-1792661142208.png",
+      "alt": "Screenshot of lumina studio"
+    },
+    "overview": "## Project Overview\n\nLumina Studio is a web-based wallpaper and image-sharing platform designed to make discovering and sharing high-quality visuals simple and enjoyable. Users can explore wallpapers across categories such as nature, animals, architecture, travel, and cyberpunk, search for images by keywords or tags, upload their own images, and download wallpapers for personal use.\n\nThe platform features a dark-themed interface, an image-focused gallery, category-based browsing, and interactive elements such as favorites and community engagement. Its goal is to create a central space where users can find visual inspiration, contribute their own photography and artwork, and access wallpapers suited to their devices and creative preferences.",
+    "features": [],
+    "order": 1
+  },
+  {
+    "slug": "clinicq-dental-scheduling",
+    "title": "ClinicQ Dental Scheduling",
+    "summary": "A dental clinic website where visitors can browse services and submit appointment requests, backed by PostgreSQL.",
+    "context": "learning",
+    "category": "Booking system",
+    "status": "in-progress",
+    "year": "2025",
+    "published": true,
+    "featured": true,
+    "order": 2,
+    "stack": {
+      "frontend": [
+        "JavaScript",
+        "Tailwind CSS",
+        "Framer Motion"
+      ],
+      "databases": [
+        {
+          "name": "PostgreSQL",
+          "type": "relational"
+        }
+      ]
+    },
+    "links": {
+      "github": "https://github.com/odehsamuel/clinicq-dental-scheduling"
+    },
+    "cover": {
+      "src": "/images/uploads/clinicq-dental-scheduling-1793119521126.png",
+      "alt": "Screenshot of the ClinicQ Dental Scheduling booking flow"
+    },
+    "overview": "I built ClinicQ to practise a scheduling workflow on a dental clinic website. A visitor can look through the clinic's services, choose an appointment option, enter their details and submit a scheduling request. Appointment data is stored in PostgreSQL, a relational database.",
+    "features": [
+      "Browse the clinic and its services",
+      "Choose an appointment option",
+      "Enter patient details",
+      "Submit a scheduling request"
+    ],
+    "placeholderFields": [
+      "status",
+      "links"
+    ],
+    "featuredOrder": 2
+  },
+  {
     "slug": "habit-tracker",
     "title": "Habit Tracker",
     "summary": "A full-stack app for creating and tracking recurring habits, with per-user accounts.",
     "context": "personal",
     "category": "Full-stack web app",
     "status": "in-progress",
-    "year": "2024",
+    "year": "2025",
     "published": true,
     "featured": true,
-    "featuredOrder": 2,
-    "order": 2,
+    "featuredOrder": 3,
+    "order": 3,
     "stack": {
       "frontend": [
         "React",
@@ -68,9 +152,9 @@
     "status": "in-progress",
     "year": "2024",
     "published": true,
-    "featured": true,
-    "featuredOrder": 3,
-    "order": 3,
+    "featured": false,
+    "featuredOrder": 999,
+    "order": 4,
     "stack": {
       "frontend": [
         "React",
@@ -112,88 +196,5 @@
       "status",
       "links"
     ]
-  },
-  {
-    "slug": "clinicq-dental-scheduling",
-    "title": "ClinicQ Dental Scheduling",
-    "summary": "A dental clinic website where visitors can browse services and submit appointment requests, backed by PostgreSQL.",
-    "context": "learning",
-    "category": "Booking system",
-    "status": "in-progress",
-    "year": "2025",
-    "published": true,
-    "featured": false,
-    "order": 4,
-    "stack": {
-      "frontend": [
-        "JavaScript",
-        "Tailwind CSS",
-        "Framer Motion"
-      ],
-      "databases": [
-        {
-          "name": "PostgreSQL",
-          "type": "relational"
-        }
-      ]
-    },
-    "links": {
-      "github": "https://github.com/odehsamuel/clinicq-dental-scheduling"
-    },
-    "cover": {
-      "src": "/images/uploads/clinicq-dental-scheduling-1792661700420.png",
-      "alt": "Screenshot of the ClinicQ Dental Scheduling booking flow"
-    },
-    "overview": "I built ClinicQ to practise a scheduling workflow on a dental clinic website. A visitor can look through the clinic's services, choose an appointment option, enter their details and submit a scheduling request. Appointment data is stored in PostgreSQL, a relational database.",
-    "features": [
-      "Browse the clinic and its services",
-      "Choose an appointment option",
-      "Enter patient details",
-      "Submit a scheduling request"
-    ],
-    "placeholderFields": [
-      "status",
-      "links"
-    ]
-  },
-  {
-    "title": "Lumina Photo Studio",
-    "slug": "lumina-photo-studio",
-    "summary": "Lumina Studio is a wallpaper-sharing platform where users can discover, upload, and download beautiful, high-resolution wallpapers and images across diverse categories. It provides a visually engaging experience for exploring inspiration, saving favorites, and sharing images with a creative community.",
-    "category": "Frontend web app",
-    "year": "2024",
-    "status": "completed",
-    "published": true,
-    "featured": true,
-    "featuredOrder": 1,
-    "context": "personal",
-    "stack": {
-      "frontend": [
-        "React",
-        "Tailwind CSS"
-      ],
-      "backend": [
-        "Node.js",
-        "Express.js"
-      ],
-      "databases": [
-        {
-          "name": "Firebase",
-          "type": "relational"
-        }
-      ],
-      "other": []
-    },
-    "links": {
-      "github": "https://github.com/odehsamuel/photo-studio",
-      "live": "https://photo-studio-seven.vercel.app/"
-    },
-    "cover": {
-      "src": "/images/uploads/screenshot-1792661142208.png",
-      "alt": "Screenshot of lumina studio"
-    },
-    "overview": "## Project Overview\n\nLumina Studio is a web-based wallpaper and image-sharing platform designed to make discovering and sharing high-quality visuals simple and enjoyable. Users can explore wallpapers across categories such as nature, animals, architecture, travel, and cyberpunk, search for images by keywords or tags, upload their own images, and download wallpapers for personal use.\n\nThe platform features a dark-themed interface, an image-focused gallery, category-based browsing, and interactive elements such as favorites and community engagement. Its goal is to create a central space where users can find visual inspiration, contribute their own photography and artwork, and access wallpapers suited to their devices and creative preferences.",
-    "features": [],
-    "order": 1
   }
 ]

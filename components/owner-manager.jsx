@@ -13,11 +13,16 @@ import {
   Eye,
   Sparkles,
   ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Star,
+  Layers,
   Upload,
   Image as ImageIcon,
   Maximize2,
   ExternalLink,
   AlertCircle,
+  AlertTriangle,
   Loader2,
 } from 'lucide-react'
 
@@ -33,6 +38,13 @@ export function OwnerManager() {
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ text: '', type: '' })
+  const [activeTab, setActiveTab] = useState('all') // 'all' | 'home'
+
+  // Project Deletion Validation State
+  const [projectToDelete, setProjectToDelete] = useState(null)
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   // Screenshot upload & preview state
   const [uploading, setUploading] = useState(false)
@@ -74,7 +86,13 @@ export function OwnerManager() {
         }
       }
       if (e.key === 'Escape') {
-        if (viewingLightbox) setViewingLightbox(null)
+        if (projectToDelete && !isDeleting) {
+          setProjectToDelete(null)
+          setDeleteConfirmInput('')
+          setDeleteError('')
+        } else if (viewingLightbox) {
+          setViewingLightbox(null)
+        }
       }
     }
 
@@ -93,7 +111,7 @@ export function OwnerManager() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('open-owner-auth', handleOpenAuth)
     }
-  }, [viewingLightbox])
+  }, [viewingLightbox, projectToDelete, isDeleting])
 
   // Fetch projects list when studio opens
   const fetchProjects = async () => {
@@ -272,7 +290,8 @@ export function OwnerManager() {
   const handleSaveProject = async (e) => {
     e.preventDefault()
     if (!editingProject.title || !editingProject.slug) {
-      alert('Title and Slug are required')
+      setMessage({ text: 'Title and Slug are required to save project.', type: 'error' })
+      setTimeout(() => setMessage({ text: '', type: '' }), 4000)
       return
     }
 
@@ -298,17 +317,45 @@ export function OwnerManager() {
         fetchProjects()
         router.refresh()
       } else {
-        alert(data.error || 'Failed to save project')
+        setMessage({ text: data.error || 'Failed to save project', type: 'error' })
+        setTimeout(() => setMessage({ text: '', type: '' }), 4500)
       }
     } catch (err) {
-      alert('Error saving project: ' + err.message)
+      setMessage({ text: 'Error saving project: ' + err.message, type: 'error' })
+      setTimeout(() => setMessage({ text: '', type: '' }), 4500)
     } finally {
       setSaving(false)
     }
   }
 
-  const handleDelete = async (slug, title) => {
-    if (!confirm(`Are you sure you want to remove "${title}"?`)) return
+  // Project Deletion Validation Handlers
+  const openDeleteModal = (proj) => {
+    setProjectToDelete(proj)
+    setDeleteConfirmInput('')
+    setDeleteError('')
+  }
+
+  const closeDeleteModal = () => {
+    if (isDeleting) return
+    setProjectToDelete(null)
+    setDeleteConfirmInput('')
+    setDeleteError('')
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!projectToDelete) return
+
+    const normalizedInput = deleteConfirmInput.trim().toLowerCase()
+    const targetSlug = (projectToDelete.slug || '').trim().toLowerCase()
+    const isValid = normalizedInput === targetSlug || normalizedInput === 'delete'
+
+    if (!isValid) {
+      setDeleteError(`Please type "${projectToDelete.slug}" or "delete" to validate deletion.`)
+      return
+    }
+
+    setIsDeleting(true)
+    setDeleteError('')
 
     try {
       const activePasscode = passcode || localStorage.getItem('odeh_owner_passcode') || 'odeh2025'
@@ -318,21 +365,147 @@ export function OwnerManager() {
         body: JSON.stringify({
           passcode: activePasscode,
           action: 'delete',
-          slug,
+          slug: projectToDelete.slug,
         }),
       })
 
       const data = await res.json()
       if (data.success) {
-        setMessage({ text: `Project "${title}" deleted.`, type: 'info' })
+        const deletedTitle = projectToDelete.title
+        setProjectToDelete(null)
+        setDeleteConfirmInput('')
+        setMessage({ text: `Project "${deletedTitle}" deleted successfully.`, type: 'info' })
+        setTimeout(() => setMessage({ text: '', type: '' }), 4500)
         fetchProjects()
         router.refresh()
       } else {
-        alert(data.error || 'Failed to delete')
+        setDeleteError(data.error || 'Failed to delete project. Please verify owner passcode.')
       }
     } catch (err) {
-      alert('Error deleting: ' + err.message)
+      setDeleteError('Error deleting: ' + err.message)
+    } finally {
+      setIsDeleting(false)
     }
+  }
+
+  // Home Page Management
+  const featuredProjects = [...projects]
+    .filter((p) => Boolean(p.featured))
+    .sort((a, b) => {
+      const aOrder = a.featuredOrder != null ? Number(a.featuredOrder) : 9999
+      const bOrder = b.featuredOrder != null ? Number(b.featuredOrder) : 9999
+      if (aOrder !== bOrder) return aOrder - bOrder
+      return 0
+    })
+
+  const nonFeaturedProjects = [...projects].filter((p) => !p.featured)
+
+  const saveHomePageBatch = async (items, toastMsg = 'Home page showcase updated!') => {
+    try {
+      const activePasscode = passcode || localStorage.getItem('odeh_owner_passcode') || 'odeh2025'
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          passcode: activePasscode,
+          action: 'updateHomePage',
+          items,
+        }),
+      })
+
+      const data = await res.json()
+      if (data.success && data.projects) {
+        setProjects(data.projects)
+        setMessage({ text: toastMsg, type: 'success' })
+        setTimeout(() => setMessage({ text: '', type: '' }), 3500)
+        router.refresh()
+      } else {
+        setMessage({ text: data.error || 'Failed to update home page projects', type: 'error' })
+        setTimeout(() => setMessage({ text: '', type: '' }), 4500)
+      }
+    } catch (err) {
+      setMessage({ text: 'Error: ' + err.message, type: 'error' })
+      setTimeout(() => setMessage({ text: '', type: '' }), 4500)
+    }
+  }
+
+  const handleMoveFeatured = (index, direction) => {
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= featuredProjects.length) return
+
+    const newFeatured = [...featuredProjects]
+    const temp = newFeatured[index]
+    newFeatured[index] = newFeatured[targetIndex]
+    newFeatured[targetIndex] = temp
+
+    const items = newFeatured.map((p, idx) => ({
+      slug: p.slug,
+      featured: true,
+      featuredOrder: idx + 1,
+    }))
+
+    saveHomePageBatch(items, 'Home page showcase reordered!')
+  }
+
+  const handleToggleFeatured = (proj) => {
+    const isNowFeatured = !proj.featured
+    let items
+    if (isNowFeatured) {
+      const newOrder = featuredProjects.length + 1
+      items = [
+        ...featuredProjects.map((p, idx) => ({ slug: p.slug, featured: true, featuredOrder: idx + 1 })),
+        { slug: proj.slug, featured: true, featuredOrder: newOrder },
+      ]
+    } else {
+      const remaining = featuredProjects.filter((p) => p.slug !== proj.slug)
+      items = [
+        ...remaining.map((p, idx) => ({ slug: p.slug, featured: true, featuredOrder: idx + 1 })),
+        { slug: proj.slug, featured: false, featuredOrder: 999 },
+      ]
+    }
+    saveHomePageBatch(
+      items,
+      isNowFeatured ? `"${proj.title}" added to Home Page!` : `"${proj.title}" removed from Home Page!`
+    )
+  }
+
+  const handleSortHomePage = (strategy) => {
+    const list = [...featuredProjects]
+    if (strategy === 'completed-year-alpha') {
+      list.sort((a, b) => {
+        const aComp = (a.status || '').toLowerCase() === 'completed'
+        const bComp = (b.status || '').toLowerCase() === 'completed'
+        if (aComp && !bComp) return -1
+        if (!aComp && bComp) return 1
+        const yDiff = (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0)
+        if (yDiff !== 0) return yDiff
+        return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
+      })
+    } else if (strategy === 'year-desc') {
+      list.sort((a, b) => {
+        const yDiff = (parseInt(b.year, 10) || 0) - (parseInt(a.year, 10) || 0)
+        if (yDiff !== 0) return yDiff
+        return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
+      })
+    } else if (strategy === 'alpha') {
+      list.sort((a, b) =>
+        (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' })
+      )
+    }
+
+    const items = list.map((p, idx) => ({
+      slug: p.slug,
+      featured: true,
+      featuredOrder: idx + 1,
+    }))
+
+    const strategyName = strategy === 'completed-year-alpha'
+      ? 'Completed First, Year, A-Z'
+      : strategy === 'year-desc'
+        ? 'Newest Year First'
+        : 'Alphabetical (A-Z)'
+
+    saveHomePageBatch(items, `Home page sorted by: ${strategyName}!`)
   }
 
   return (
@@ -375,8 +548,22 @@ export function OwnerManager() {
             exit={{ opacity: 0, y: 16 }}
             className={`owner-toast ${message.type}`}
           >
-            <Check size={16} />
+            {message.type === 'error' && <AlertCircle size={16} className="toast-icon-error" />}
+            {message.type === 'warning' && <AlertTriangle size={16} className="toast-icon-warning" />}
+            {message.type === 'info' && <Sparkles size={16} className="toast-icon-info" />}
+            {message.type === 'success' && <Check size={16} className="toast-icon-success" />}
+            {!['error', 'warning', 'info', 'success'].includes(message.type) && (
+              <Check size={16} className="toast-icon-success" />
+            )}
             <span>{message.text}</span>
+            <button
+              type="button"
+              className="toast-close-btn"
+              onClick={() => setMessage({ text: '', type: '' })}
+              aria-label="Dismiss notification"
+            >
+              <X size={13} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -661,9 +848,8 @@ export function OwnerManager() {
                       ) : (
                         /* Drag and Drop Upload Zone */
                         <div
-                          className={`screenshot-dropzone ${isDragging ? 'is-dragging' : ''} ${
-                            uploading ? 'is-uploading' : ''
-                          }`}
+                          className={`screenshot-dropzone ${isDragging ? 'is-dragging' : ''} ${uploading ? 'is-uploading' : ''
+                            }`}
                           onDrop={handleDrop}
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
@@ -798,7 +984,13 @@ export function OwnerManager() {
                           type="checkbox"
                           checked={Boolean(editingProject.featured)}
                           onChange={(e) =>
-                            setEditingProject((prev) => ({ ...prev, featured: e.target.checked }))
+                            setEditingProject((prev) => ({
+                              ...prev,
+                              featured: e.target.checked,
+                              featuredOrder: e.target.checked
+                                ? prev.featuredOrder || (featuredProjects.length + 1)
+                                : prev.featuredOrder,
+                            }))
                           }
                         />
                         <span>Feature on Home Page (Selected Projects)</span>
@@ -815,6 +1007,29 @@ export function OwnerManager() {
                         <span>Published (visible on website)</span>
                       </label>
                     </div>
+
+                    {editingProject.featured && (
+                      <div className="featured-order-box mono text-xs">
+                        <label className="form-label">
+                          <span>Home Page Display Position (#1 appears first)</span>
+                          <input
+                            type="number"
+                            min="1"
+                            value={editingProject.featuredOrder ?? 1}
+                            onChange={(e) =>
+                              setEditingProject((prev) => ({
+                                ...prev,
+                                featuredOrder: parseInt(e.target.value, 10) || 1,
+                              }))
+                            }
+                            className="owner-input"
+                          />
+                        </label>
+                        <span className="text-muted">
+                          Choose what number position this project should occupy on the home page.
+                        </span>
+                      </div>
+                    )}
 
                     {/* Tech Stack */}
                     <div className="form-section">
@@ -971,98 +1186,312 @@ export function OwnerManager() {
                       >
                         Cancel
                       </button>
+                      {!isCreatingNew && (
+                        <button
+                          type="button"
+                          className="studio-action-btn delete-btn"
+                          style={{ marginLeft: 'auto' }}
+                          onClick={() => openDeleteModal(editingProject)}
+                          title="Delete this project"
+                        >
+                          <Trash2 size={13} />
+                          <span>Delete</span>
+                        </button>
+                      )}
                     </div>
                   </form>
                 ) : (
-                  /* Projects List with Screenshot Previews */
-                  <div className="studio-project-list">
-                    <div className="studio-list-summary mono text-xs text-muted">
-                      <span>Total: {projects.length} project{projects.length === 1 ? '' : 's'}</span>
-                      <span>Click screenshot thumbnail to preview full resolution</span>
+                  <>
+                    {/* Studio Sub-Navigation Tabs */}
+                    <div className="studio-tabs mono text-xs">
+                      <button
+                        type="button"
+                        className={`studio-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('all')}
+                      >
+                        <Layers size={13} />
+                        <span>All Projects ({projects.length})</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`studio-tab-btn ${activeTab === 'home' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('home')}
+                      >
+                        <Star size={13} />
+                        <span>Home Page Showcase ({featuredProjects.length})</span>
+                      </button>
                     </div>
 
-                    {projects.map((proj) => (
-                      <div key={proj.slug} className="studio-project-card">
-                        {/* Screenshot Visual Thumbnail Preview */}
-                        <div
-                          className="studio-project-thumbnail"
-                          onClick={() => {
-                            if (proj.cover?.src) {
-                              setViewingLightbox({
-                                src: proj.cover.src,
-                                alt: proj.cover.alt,
-                                title: proj.title,
-                                slug: proj.slug,
-                              })
-                            }
-                          }}
-                          role={proj.cover?.src ? 'button' : undefined}
-                          title={proj.cover?.src ? 'Click to preview full screenshot' : 'No screenshot uploaded'}
-                        >
-                          {proj.cover?.src ? (
-                            <>
-                              <img
-                                src={proj.cover.src}
-                                alt={proj.cover.alt || proj.title}
-                                className="studio-thumb-img"
-                              />
-                              <div className="thumb-zoom-overlay">
-                                <Maximize2 size={14} />
-                                <span className="mono text-xs">Preview</span>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="thumb-no-screenshot">
-                              <ImageIcon size={20} className="text-muted" />
-                              <span className="mono text-xs text-muted">No screenshot</span>
+                    {activeTab === 'home' ? (
+                      /* Home Page Showcase Manager */
+                      <div className="home-showcase-manager">
+                        <div className="home-showcase-header">
+                          <div className="home-showcase-info">
+                            <h4>Selected Projects on Home Page</h4>
+                            <p className="text-muted text-xs">
+                              Control which projects appear on your homepage and define their exact display order. Use <strong>Move Up / Down</strong> or choose an automatic sort preset.
+                            </p>
+                          </div>
+
+                          {/* Quick Sorting Presets Toolbar */}
+                          <div className="home-sort-presets mono text-xs">
+                            <span className="text-muted">Auto-sort Home Page:</span>
+                            <div className="preset-buttons-wrap">
+                              <button
+                                type="button"
+                                className="home-preset-btn"
+                                onClick={() => handleSortHomePage('completed-year-alpha')}
+                                title="Completed projects first, sorted by newest year and title A-Z"
+                              >
+                                Completed First (Year & A-Z)
+                              </button>
+                              <button
+                                type="button"
+                                className="home-preset-btn"
+                                onClick={() => handleSortHomePage('year-desc')}
+                                title="Sort by newest year first (2025 -> 2024)"
+                              >
+                                Newest Year First
+                              </button>
+                              <button
+                                type="button"
+                                className="home-preset-btn"
+                                onClick={() => handleSortHomePage('alpha')}
+                                title="Sort alphabetically A-Z"
+                              >
+                                Alphabetical (A–Z)
+                              </button>
                             </div>
+                          </div>
+                        </div>
+
+                        {/* Active Featured Projects List */}
+                        <div className="home-featured-list">
+                          <div className="studio-list-summary mono text-xs text-muted">
+                            <span>Currently on Home Page: {featuredProjects.length}</span>
+                            <span>Order #1 displays first at the top of Selected Projects</span>
+                          </div>
+
+                          {featuredProjects.length === 0 ? (
+                            <div className="home-empty-box mono text-xs text-muted">
+                              No projects currently selected for the home page. Add projects from the available list below!
+                            </div>
+                          ) : (
+                            featuredProjects.map((proj, idx) => (
+                              <div key={proj.slug} className="home-featured-row">
+                                <div className="home-order-indicator mono">
+                                  <span className="home-order-pill">#{idx + 1}</span>
+                                  <div className="home-arrow-col">
+                                    <button
+                                      type="button"
+                                      disabled={idx === 0}
+                                      onClick={() => handleMoveFeatured(idx, -1)}
+                                      className="home-reorder-btn"
+                                      title="Move Up on Home Page"
+                                    >
+                                      <ArrowUp size={12} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={idx === featuredProjects.length - 1}
+                                      onClick={() => handleMoveFeatured(idx, 1)}
+                                      className="home-reorder-btn"
+                                      title="Move Down on Home Page"
+                                    >
+                                      <ArrowDown size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div
+                                  className="studio-project-thumbnail home-card-thumb"
+                                  onClick={() => {
+                                    if (proj.cover?.src) {
+                                      setViewingLightbox({
+                                        src: proj.cover.src,
+                                        alt: proj.cover.alt,
+                                        title: proj.title,
+                                        slug: proj.slug,
+                                      })
+                                    }
+                                  }}
+                                >
+                                  {proj.cover?.src ? (
+                                    <img
+                                      src={proj.cover.src}
+                                      alt={proj.cover.alt || proj.title}
+                                      className="studio-thumb-img"
+                                    />
+                                  ) : (
+                                    <div className="thumb-no-screenshot">
+                                      <ImageIcon size={18} className="text-muted" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="card-info">
+                                  <div className="card-top-row">
+                                    <span className="mono text-muted text-xs">{proj.year}</span>
+                                    <span className="mono status-badge">{proj.status}</span>
+                                    <span className="mono category-badge text-xs">{proj.category}</span>
+                                  </div>
+                                  <h4>{proj.title}</h4>
+                                  <p className="card-summary text-muted">{proj.summary}</p>
+                                </div>
+
+                                <div className="card-actions">
+                                  <button
+                                    type="button"
+                                    className="studio-action-btn edit-btn"
+                                    onClick={() => startEdit(proj)}
+                                    title="Edit project"
+                                  >
+                                    <Edit2 size={13} /> Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="studio-action-btn remove-home-btn"
+                                    onClick={() => handleToggleFeatured(proj)}
+                                    title="Remove from home page"
+                                  >
+                                    <X size={13} /> Remove
+                                  </button>
+                                </div>
+                              </div>
+                            ))
                           )}
                         </div>
 
-                        {/* Project Details */}
-                        <div className="card-info">
-                          <div className="card-top-row">
-                            <span className="mono text-muted text-xs">{proj.year}</span>
-                            <span className="mono status-badge">{proj.status}</span>
-                            {proj.featured && (
-                              <span className="mono featured-badge">★ Featured</span>
-                            )}
-                            {!proj.published && (
-                              <span className="mono draft-badge">Draft</span>
-                            )}
+                        {/* Available Projects to Add */}
+                        {nonFeaturedProjects.length > 0 && (
+                          <div className="home-available-section">
+                            <div className="studio-list-summary mono text-xs text-muted mb-2">
+                              <span>Available to add to Home Page ({nonFeaturedProjects.length})</span>
+                            </div>
+                            <div className="home-available-grid">
+                              {nonFeaturedProjects.map((proj) => (
+                                <div key={proj.slug} className="home-available-card">
+                                  <div className="available-card-info">
+                                    <span className="mono text-muted text-xs">{proj.year} · {proj.status}</span>
+                                    <h5>{proj.title}</h5>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="button-primary text-xs"
+                                    onClick={() => handleToggleFeatured(proj)}
+                                    title="Add to Home Page"
+                                  >
+                                    <Plus size={13} /> Add to Home
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <h4>{proj.title}</h4>
-                          <p className="card-summary text-muted">{proj.summary}</p>
-                          <div className="card-stack mono text-xs">
-                            {[
-                              ...(proj.stack?.frontend || []),
-                              ...(proj.stack?.backend || []),
-                            ].slice(0, 4).join(' · ')}
-                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* All Projects List */
+                      <div className="studio-project-list">
+                        <div className="studio-list-summary mono text-xs text-muted">
+                          <span>Total: {projects.length} project{projects.length === 1 ? '' : 's'}</span>
+                          <span>Click screenshot thumbnail to preview full resolution</span>
                         </div>
 
-                        {/* Card Actions */}
-                        <div className="card-actions">
-                          <button
-                            type="button"
-                            className="studio-action-btn edit-btn"
-                            onClick={() => startEdit(proj)}
-                            title="Edit project & screenshot"
-                          >
-                            <Edit2 size={14} /> Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="studio-action-btn delete-btn"
-                            onClick={() => handleDelete(proj.slug, proj.title)}
-                            title="Delete project"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        {projects.map((proj) => (
+                          <div key={proj.slug} className="studio-project-card">
+                            {/* Screenshot Visual Thumbnail Preview */}
+                            <div
+                              className="studio-project-thumbnail"
+                              onClick={() => {
+                                if (proj.cover?.src) {
+                                  setViewingLightbox({
+                                    src: proj.cover.src,
+                                    alt: proj.cover.alt,
+                                    title: proj.title,
+                                    slug: proj.slug,
+                                  })
+                                }
+                              }}
+                              role={proj.cover?.src ? 'button' : undefined}
+                              title={proj.cover?.src ? 'Click to preview full screenshot' : 'No screenshot uploaded'}
+                            >
+                              {proj.cover?.src ? (
+                                <>
+                                  <img
+                                    src={proj.cover.src}
+                                    alt={proj.cover.alt || proj.title}
+                                    className="studio-thumb-img"
+                                  />
+                                  <div className="thumb-zoom-overlay">
+                                    <Maximize2 size={14} />
+                                    <span className="mono text-xs">Preview</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="thumb-no-screenshot">
+                                  <ImageIcon size={20} className="text-muted" />
+                                  <span className="mono text-xs text-muted">No screenshot</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Project Details */}
+                            <div className="card-info">
+                              <div className="card-top-row">
+                                <span className="mono text-muted text-xs">{proj.year}</span>
+                                <span className="mono status-badge">{proj.status}</span>
+                                {proj.featured && (
+                                  <span className="mono featured-badge">
+                                    ★ Home #{featuredProjects.findIndex((f) => f.slug === proj.slug) + 1}
+                                  </span>
+                                )}
+                                {!proj.published && (
+                                  <span className="mono draft-badge">Draft</span>
+                                )}
+                              </div>
+                              <h4>{proj.title}</h4>
+                              <p className="card-summary text-muted">{proj.summary}</p>
+                              <div className="card-stack mono text-xs">
+                                {[
+                                  ...(proj.stack?.frontend || []),
+                                  ...(proj.stack?.backend || []),
+                                ].slice(0, 4).join(' · ')}
+                              </div>
+                            </div>
+
+                            {/* Card Actions */}
+                            <div className="card-actions">
+                              <button
+                                type="button"
+                                className={`studio-action-btn ${proj.featured ? 'home-active-btn' : 'home-toggle-btn'}`}
+                                onClick={() => handleToggleFeatured(proj)}
+                                title={proj.featured ? 'Remove from Home Page' : 'Feature on Home Page'}
+                              >
+                                <Star size={13} fill={proj.featured ? 'currentColor' : 'none'} />
+                                <span>{proj.featured ? 'On Home' : '+ Home'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="studio-action-btn edit-btn"
+                                onClick={() => startEdit(proj)}
+                                title="Edit project & screenshot"
+                              >
+                                <Edit2 size={14} /> Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="studio-action-btn delete-btn"
+                                onClick={() => openDeleteModal(proj)}
+                                title="Delete project"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
             </motion.div>
@@ -1125,6 +1554,200 @@ export function OwnerManager() {
               <div className="lightbox-footer mono text-xs text-muted">
                 <span>{viewingLightbox.alt || 'Project website screenshot'}</span>
                 <span>Press ESC or click outside to close</span>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom On-Screen Deletion Validation Modal */}
+      <AnimatePresence>
+        {projectToDelete && (
+          <div
+            className="deletion-modal-overlay"
+            onClick={closeDeleteModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="deletion-modal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header with Danger Badge */}
+              <div className="deletion-modal-header">
+                <div className="deletion-header-main">
+                  <div className="deletion-icon-badge" aria-hidden="true">
+                    <AlertTriangle size={22} />
+                  </div>
+                  <div>
+                    <div className="deletion-badge-tag mono">Destructive Action · Irreversible</div>
+                    <h3 id="delete-dialog-title" className="deletion-title">
+                      Delete Project?
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={closeDeleteModal}
+                  disabled={isDeleting}
+                  aria-label="Close dialog"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Warning Copy */}
+              <p className="deletion-description">
+                You are about to delete <strong style={{ color: 'var(--fg)' }}>"{projectToDelete.title}"</strong>. This will permanently remove its metadata, configuration, and references from the portfolio.
+              </p>
+
+              {/* Project Preview Summary Card */}
+              <div className="deletion-project-preview">
+                {projectToDelete.cover?.src ? (
+                  <img
+                    src={projectToDelete.cover.src}
+                    alt={projectToDelete.title}
+                    className="deletion-preview-img"
+                  />
+                ) : (
+                  <div className="deletion-preview-fallback">
+                    <Trash2 size={18} />
+                  </div>
+                )}
+                <div className="deletion-preview-details">
+                  <div className="deletion-preview-title">{projectToDelete.title}</div>
+                  <div className="deletion-preview-slug mono">
+                    /projects/{projectToDelete.slug}
+                  </div>
+                  <div className="deletion-preview-meta">
+                    <span className="deletion-meta-pill status mono">
+                      {projectToDelete.status || 'Active'}
+                    </span>
+                    {projectToDelete.year && (
+                      <span className="deletion-meta-pill mono">{projectToDelete.year}</span>
+                    )}
+                    {projectToDelete.featured && (
+                      <span className="deletion-meta-pill featured mono">Featured on Home</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Home Page Warning if featured */}
+              {projectToDelete.featured && (
+                <div className="deletion-home-warning mono">
+                  <AlertCircle size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>
+                    <strong>Home Page Impact:</strong> This project is currently pinned to the home page showcase. Deleting it will automatically remove it from the home page.
+                  </span>
+                </div>
+              )}
+
+              {/* Validation Step */}
+              <div className="deletion-validation-box">
+                <label htmlFor="deletion-verify-input" className="deletion-input-label">
+                  <span className="mono">Safety Validation</span>
+                  <p className="deletion-input-hint">
+                    To confirm deletion, type <code className="deletion-slug-chip" onClick={() => setDeleteConfirmInput(projectToDelete.slug)} title="Click to autofill slug">{projectToDelete.slug}</code> or <code className="deletion-slug-chip" onClick={() => setDeleteConfirmInput('delete')} title="Click to autofill 'delete'">delete</code> below:
+                  </p>
+                </label>
+
+                <div className="deletion-input-wrap">
+                  <input
+                    id="deletion-verify-input"
+                    type="text"
+                    autoFocus
+                    value={deleteConfirmInput}
+                    onChange={(e) => {
+                      setDeleteConfirmInput(e.target.value)
+                      if (deleteError) setDeleteError('')
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const norm = deleteConfirmInput.trim().toLowerCase()
+                        const target = (projectToDelete.slug || '').trim().toLowerCase()
+                        if (norm === target || norm === 'delete') {
+                          handleConfirmDelete()
+                        }
+                      }
+                    }}
+                    disabled={isDeleting}
+                    placeholder={`Type "${projectToDelete.slug}" to validate`}
+                    className="deletion-text-input mono"
+                    autoComplete="off"
+                    spellCheck="false"
+                  />
+                  {deleteConfirmInput && (
+                    <button
+                      type="button"
+                      className="deletion-clear-input-btn"
+                      onClick={() => setDeleteConfirmInput('')}
+                      disabled={isDeleting}
+                      title="Clear"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Inline Error Alert if API call failed */}
+              {deleteError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="deletion-error-banner mono"
+                >
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{deleteError}</span>
+                </motion.div>
+              )}
+
+              {/* Actions */}
+              <div className="deletion-modal-actions">
+                <button
+                  type="button"
+                  className="deletion-cancel-btn"
+                  onClick={closeDeleteModal}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="deletion-confirm-btn"
+                  onClick={handleConfirmDelete}
+                  disabled={
+                    isDeleting ||
+                    (deleteConfirmInput.trim().toLowerCase() !== (projectToDelete.slug || '').trim().toLowerCase() &&
+                     deleteConfirmInput.trim().toLowerCase() !== 'delete')
+                  }
+                  title={
+                    deleteConfirmInput.trim().toLowerCase() === (projectToDelete.slug || '').trim().toLowerCase() ||
+                    deleteConfirmInput.trim().toLowerCase() === 'delete'
+                      ? 'Confirm permanent deletion'
+                      : 'Type the project slug or "delete" to enable'
+                  }
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 size={15} className="spin-icon" />
+                      <span>Deleting Project...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={15} />
+                      <span>Permanently Delete Project</span>
+                    </>
+                  )}
+                </button>
               </div>
             </motion.div>
           </div>
